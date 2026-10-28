@@ -6,6 +6,7 @@ if (-not (Test-Path -LiteralPath $installedExe)) { throw 'EyeKeeper is not insta
 $releaseHash = (Get-FileHash -LiteralPath $releaseExe -Algorithm SHA256).Hash
 $settingsPath = Join-Path $env:LOCALAPPDATA 'EyeKeeper\settings.json'
 $beforeSettings = if (Test-Path -LiteralPath $settingsPath) { (Get-FileHash -LiteralPath $settingsPath).Hash } else { $null }
+$beforePreferences = if (Test-Path -LiteralPath $settingsPath) { Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json } else { $null }
 Start-Process -FilePath $installedExe -ArgumentList '--stop' -WindowStyle Hidden -Wait
 Start-Sleep -Seconds 1
 Get-Process -Name EyeKeeper -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $installedExe } | ForEach-Object {
@@ -30,11 +31,19 @@ try {
 Start-Process -FilePath $installedExe -ArgumentList '--background' -WindowStyle Hidden
 if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'install-recovery.ps1')) { & (Join-Path $PSScriptRoot 'install-recovery.ps1') }
 $afterSettings = if (Test-Path -LiteralPath $settingsPath) { (Get-FileHash -LiteralPath $settingsPath).Hash } else { $null }
+$existingPreferencesPreserved = $true
+if ($beforePreferences) {
+    $afterPreferences = Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json
+    foreach ($property in $beforePreferences.PSObject.Properties) {
+        if (-not $afterPreferences.PSObject.Properties[$property.Name] -or $afterPreferences.($property.Name) -ne $property.Value) { $existingPreferencesPreserved = $false }
+    }
+}
 [pscustomobject]@{
     Version = (Get-Item -LiteralPath $installedExe).VersionInfo.ProductVersion
     InstalledExe = $installedExe
     SHA256 = $releaseHash
-    SettingsPreserved = $beforeSettings -eq $afterSettings
+    SettingsPreserved = $existingPreferencesPreserved
+    SettingsBytesUnchanged = $beforeSettings -eq $afterSettings
     BackgroundLaunched = $true
 } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $projectRoot 'artifacts\update-receipt.json') -Encoding utf8
 Get-Content -LiteralPath (Join-Path $projectRoot 'artifacts\update-receipt.json')

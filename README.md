@@ -18,9 +18,13 @@ Click or right-click its eye icon in the notification area to open preferences. 
 - `Esc`: skip the current rest. `S`: snooze for five minutes. The footer also accepts a click on either action.
 - Set work intervals, rest length, one of 18 atmospheres and one of 8 motion styles independently. Random selection avoids immediately repeating a color or motion style.
 - Background flow, ring pulse and liquid transitions can each be disabled under **Animation details**. **Reduced motion** disables movement as a group.
+- The ring pulses once at each countdown second, with the same clock driving the soft rest ticks. The warning capsule plays one opening chime and counts down silently; entering and completing a rest use distinct short cues.
+- **Sound** has independent sound/tick toggles and volume. Tones are synthesized locally, preloaded and cached; playback does not change the system volume.
 - **Save preferences** applies changes and starts a fresh work interval. **Pause 30 min** resumes automatically; **Resume** resumes early.
 - **Close menu** only hides preferences; reminders keep running. Complete exit is under **Application → Quit EyeKeeper completely…** and requires confirmation. Opening and canceling that confirmation keeps the menu alive.
 - **Launch with Windows** controls the current-user Run entry and whether the Windows recovery task may start the guardian automatically.
+
+`Esc` is temporarily registered while an overlay is visible, so dismissing the reminder works even if the click-through window has not taken focus. The registration is released at dismissal; it is not held during ordinary work. Closing the menu and confirmed application exit remain separate actions.
 
 Preferences are stored in `%LOCALAPPDATA%\EyeKeeper\settings.json`. Errors are recorded in `error.log` in the same folder. After a suspend/resume or unlocking the session, a running work schedule starts fresh so a stale break does not cover the desktop unexpectedly. A manual pause is retained.
 
@@ -49,6 +53,8 @@ dotnet src/EyeKeeper/bin/Release/net10.0-windows/EyeKeeper.dll --render-previews
 ```
 
 Render mode exits before creating a tray icon, acquiring the instance mutex, loading user settings or registering startup. `--diagnostics <file.json>` checks the WPF rendering tier, shader capability and shader loading without opening a window.
+
+`--sound-lab <output-folder>` opens the optional developer sound preview. This window is only shown when explicitly requested; normal startup and background mode never open it. It uses temporary preferences and does not install a guardian or modify startup/settings. Optional preview-only builds can define `SOUND_LAB_BUILD`; the production build leaves that symbol undefined.
 
 ## Rendering
 
