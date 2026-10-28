@@ -24,5 +24,55 @@ public static class Native
         const long transparent = 0x20, noActivate = 0x08000000, toolWindow = 0x80;
         style = enabled ? style | transparent | noActivate | toolWindow : (style & ~transparent & ~noActivate) | toolWindow;
         SetWindowLongPtr(h, -20, new IntPtr(style));
+        SetWindowPos(h, IntPtr.Zero, 0, 0, 0, 0, 0x0037); // Apply extended-style changes without moving/activating.
+    }
+}
+
+// Registered only while the reminder is visible, and only once for all displays.
+// WM_HOTKEY arrives even when the click-through overlay cannot take keyboard focus.
+public sealed class EscapeShortcut : IDisposable
+{
+    public const int Id = 0x4E51;
+    public bool IsRegistered { get; }
+    readonly HwndSource source;
+    readonly IntPtr handle;
+    readonly Window owner;
+    readonly Action cancel;
+    bool disposed, pending;
+    [DllImport("user32.dll", SetLastError = true)] static extern bool RegisterHotKey(IntPtr window, int id, uint modifiers, uint key);
+    [DllImport("user32.dll")] static extern bool UnregisterHotKey(IntPtr window, int id);
+    public EscapeShortcut(Window window, Action action)
+    {
+        owner = window; cancel = action;
+        handle = new WindowInteropHelper(window).Handle;
+        source = HwndSource.FromHwnd(handle) ?? throw new InvalidOperationException("Create the window before registering Escape.");
+        IsRegistered = RegisterHotKey(handle, Id, 0x4000, 0x1B);
+        if (IsRegistered) source.AddHook(Receive);
+        else Storage.Log(new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "Could not register the temporary Escape shortcut."));
+    }
+    IntPtr Receive(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (message == 0x0312 && wParam.ToInt32() == Id && !disposed)
+        {
+            handled = true;
+            if (!pending)
+            {
+                pending = true;
+                owner.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                {
+                    if (!disposed) cancel();
+                }));
+            }
+        }
+        return IntPtr.Zero;
+    }
+    public void Dispose()
+    {
+        if (disposed) return; disposed = true;
+        if (IsRegistered)
+        {
+            UnregisterHotKey(handle, Id);
+            if (!source.IsDisposed) source.RemoveHook(Receive);
+        }
     }
 }

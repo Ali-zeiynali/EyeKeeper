@@ -118,6 +118,14 @@ public sealed class ControlPanel : Border
         details.Children.Add(Toggle("Breathing ring", prefs.BreathingRing, v => prefs.BreathingRing = v));
         details.Children.Add(Toggle("Liquid transitions", prefs.LiquidTransitions, v => prefs.LiquidTransitions = v));
         root.Children.Add(new Expander { Header = "Animation details", Content = details, Foreground = Art.Brush("#ACC0D1"), FontSize = 11, Margin = new Thickness(0, 8, 0, 0) });
+        var audio = new StackPanel { Margin = new Thickness(0, 9, 0, 3) };
+        audio.Children.Add(Toggle("Sound effects", prefs.SoundEnabled, v => prefs.SoundEnabled = v));
+        audio.Children.Add(Toggle("Rest countdown ticks", prefs.TickSounds, v => prefs.TickSounds = v));
+        audio.Children.Add(Label("Sound volume", 11, "#8295AC", margin: new Thickness(0, 6, 0, 6)));
+        var volume = new Slider { Minimum = 0, Maximum = 100, Value = prefs.SoundVolume * 100, Foreground = Art.Brush("#B9F2E2"), Margin = new Thickness(0, 0, 0, 8) };
+        volume.ValueChanged += (_, e) => prefs.SoundVolume = e.NewValue / 100;
+        audio.Children.Add(volume);
+        root.Children.Add(new Expander { Header = "Sound", Content = audio, Foreground = Art.Brush("#ACC0D1"), FontSize = 11, Margin = new Thickness(0, 10, 0, 0) });
         var appDetails = new StackPanel { Margin = new Thickness(0, 10, 0, 3) };
         appDetails.Children.Add(Label("Closing this menu keeps reminders running.", 10, "#8295AC"));
         var quit = new Button { Content = "Quit EyeKeeper completely…", Background = Art.Brush("#352534"), Foreground = Art.Brush("#EDB5C4"), Margin = new Thickness(0, 10, 0, 0) };

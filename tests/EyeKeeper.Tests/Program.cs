@@ -206,8 +206,101 @@ Test("Close menu is independent of the separate application Quit action", () => 
     exit.RaiseEvent(new System.Windows.RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
     Equal(1, closed); Equal(1, quit);
 }));
+Test("audio cues are emitted once per transition and second", () =>
+{
+    var c = new SoundCueClock();
+    Equal<SoundCue?>(SoundCue.Warning, c.Observe(Phase.Warning, 30, 0));
+    for (int i = 0; i < 120; i++) Equal<SoundCue?>(null, c.Observe(Phase.Warning, 30, 0));
+    Equal<SoundCue?>(null, c.Observe(Phase.Warning, 29, 0));
+    Equal<SoundCue?>(null, c.Observe(Phase.Warning, 29, 0));
+    Equal<SoundCue?>(SoundCue.RestStart, c.Observe(Phase.Resting, 20, 0));
+    Equal<SoundCue?>(SoundCue.Tick, c.Observe(Phase.Resting, 19, 0));
+    Equal<SoundCue?>(null, c.Observe(Phase.Resting, 0, 0));
+    Equal<SoundCue?>(SoundCue.Complete, c.Observe(Phase.Working, 1200, 1));
+    Equal<SoundCue?>(null, c.Observe(Phase.Working, 1200, 1));
+});
+Test("the warning capsule is silent after its opening chime", () =>
+{
+    var clock = new SoundCueClock(); int chimes = 0;
+    for (int second = 30; second >= 0; second--)
+        for (int frame = 0; frame < 10; frame++)
+        {
+            var cue = clock.Observe(Phase.Warning, second, 0);
+            if (cue == SoundCue.Warning) chimes++;
+            else if (cue.HasValue) throw new Exception("Extra sound during capsule countdown");
+        }
+    Equal(1, chimes);
+});
+Test("Escape shortcut receives native messages without focus and releases its registration", () => OnSta(() =>
+{
+    var window = new SafeWindow { Width = 1, Height = 1, Left = -32000, Top = -32000, ShowActivated = false, ShowInTaskbar = false };
+    window.Show(); Equal(false, window.IsActive);
+    int hits = 0;
+    using (var shortcut = new EscapeShortcut(window, () => hits++))
+    {
+        Equal(true, shortcut.IsRegistered);
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(window).Handle;
+        if (!NativeTestMessages.PostMessage(hwnd, 0x0312, new IntPtr(EscapeShortcut.Id), new IntPtr(0x001B0000)))
+            throw new Exception("Could not post the native hotkey message");
+        var frame = new System.Windows.Threading.DispatcherFrame();
+        var stop = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+        stop.Tick += (_, _) => { stop.Stop(); frame.Continue = false; }; stop.Start();
+        System.Windows.Threading.Dispatcher.PushFrame(frame); Equal(1, hits);
+    }
+    using (var again = new EscapeShortcut(window, () => hits++)) Equal(true, again.IsRegistered);
+    window.RequestClose();
+}));
+Test("skipping or pausing a rest does not play the completion cue", () =>
+{
+    var c = new SoundCueClock(); c.Observe(Phase.Resting, 20, 0);
+    Equal<SoundCue?>(null, c.Observe(Phase.Working, 1200, 0));
+    c.Observe(Phase.Resting, 20, 0);
+    Equal<SoundCue?>(null, c.Observe(Phase.Paused, 1200, 0));
+});
+Test("second pulse peaks at each number change and settles between ticks", () =>
+{
+    Equal(0d, CountdownBeat.Age(12));
+    if (Math.Abs(CountdownBeat.Age(11.9) - .1) > .00001) throw new Exception("Wrong pulse phase");
+    Equal(1d, CountdownBeat.Strength(0));
+    Equal(0d, CountdownBeat.Strength(.8));
+    if (CountdownBeat.Strength(.1) <= CountdownBeat.Strength(.3)) throw new Exception("Pulse does not decay");
+});
+Test("sound waves are bounded, tapered and produce valid PCM headers", () =>
+{
+    foreach (var cue in Enum.GetValues<SoundCue>())
+    {
+        var samples = SoundDesign.Samples(cue, .36);
+        if (samples.Length < 4000 || samples.Length >= SoundDesign.SampleRate) throw new Exception("Wrong cue duration");
+        Equal((short)0, samples[0]);
+        if (Math.Abs((int)samples[^1]) > 2) throw new Exception("Abrupt audio ending");
+        if (samples.Max(v => Math.Abs((int)v)) >= 12000) throw new Exception("Preview cue is too loud");
+        var wav = SoundDesign.Wave(cue, .36);
+        Equal("RIFF", System.Text.Encoding.ASCII.GetString(wav, 0, 4));
+        Equal("WAVE", System.Text.Encoding.ASCII.GetString(wav, 8, 4));
+        Equal(samples.Length * 2, BitConverter.ToInt32(wav, 40));
+        Equal(44 + samples.Length * 2, wav.Length);
+    }
+});
+Test("muted synthesis is silent and volume is constrained", () =>
+{
+    if (SoundDesign.Samples(SoundCue.Tick, 0).Any(v => v != 0)) throw new Exception("Muted tone is not silent");
+    var p = new Preferences { SoundVolume = double.NaN }; p.Validate(); Equal(.36, p.SoundVolume);
+    p.SoundVolume = 5; p.Validate(); Equal(1d, p.SoundVolume);
+    p.SoundVolume = -2; p.Validate(); Equal(0d, p.SoundVolume);
+});
+Test("sound settings survive JSON roundtrip", () =>
+{
+    var p = JsonSerializer.Deserialize<Preferences>(JsonSerializer.Serialize(new Preferences { SoundEnabled = false, TickSounds = false, SoundVolume = .23 }))!;
+    Equal(false, p.SoundEnabled); Equal(false, p.TickSounds); Equal(.23, p.SoundVolume);
+});
 var benchmark = System.Diagnostics.Stopwatch.StartNew();
 FluidTexture.Pixels(0, 0, 480, 300); benchmark.Restart();
 for (int i = 0; i < 12; i++) FluidTexture.Pixels(0, i / 30d, 480, 300);
 Console.WriteLine(FormattableString.Invariant($"INFO CPU fallback rasterizer: {benchmark.Elapsed.TotalMilliseconds / 12:F1} ms/frame at 480x300 (12-frame local benchmark; UI composition excluded)."));
 Console.WriteLine($"\n{passed} tests passed. Window regressions run offscreen at (-32000,-32000). No tray, startup or settings changes.");
+
+static class NativeTestMessages
+{
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    public static extern bool PostMessage(IntPtr hwnd, uint message, IntPtr wParam, IntPtr lParam);
+}

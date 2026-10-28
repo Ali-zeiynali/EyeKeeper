@@ -92,6 +92,7 @@ public sealed class RestVisual : FrameworkElement
     public int Duration { get; set; } = 20;
     public int Palette { get; set; }
     public double? Progress { get; set; }
+    public double SecondAge { get; set; }
     public bool Secondary { get; set; }
     public bool ReducedMotion { get; set; }
     public bool FlowingBackground { get; set; } = true;
@@ -169,7 +170,8 @@ public sealed class RestVisual : FrameworkElement
     {
         var c = new Point(r.X + 36, r.Y + 32);
         dc.DrawEllipse(Art.Brush("#153A454C"), null, c, 20, 20);
-        Art.Ring(dc, c, 19, Seconds / 30d, 1.6, Art.Brush("#8DF9E2"));
+        double beat = ReducedMotion || !BreathingRing ? 0 : CountdownBeat.Strength(SecondAge);
+        Art.Ring(dc, c, 19 + beat, Seconds / 30d, 1.6 + .6 * beat, Art.Brush("#8DF9E2"));
         Art.Text(dc, Seconds.ToString("00"), 15, Brushes.White, c.X, c.Y - 11, true, true);
         Art.Text(dc, "Rest time", 15, Art.Brush("#F1F8FF"), r.X + 70, r.Y + 12, true);
         Art.Text(dc, "A moment for your eyes", 10.5, Art.Brush("#8C9AAF"), r.X + 70, r.Y + 35);
@@ -192,14 +194,17 @@ public sealed class RestVisual : FrameworkElement
         Art.Text(dc, "A MOMENT OF CALM", 10, Art.Brush("#B8FFFFFF"), w - 164, 39);
         dc.PushTransform(new TranslateTransform(cx, cy));
         dc.PushTransform(new ScaleTransform(scale, scale));
-        double wave = ReducedMotion || !BreathingRing ? 0 : .5 + .5 * Math.Sin(Time * Math.PI * 2 / 2.8);
-        double breathe = 1 + .012 * wave;
+        double wave = ReducedMotion || !BreathingRing ? 0 : CountdownBeat.Strength(SecondAge);
+        double breathe = 1 + .026 * wave;
         double progress = Progress ?? Seconds / (double)Math.Max(1, Duration);
-        dc.DrawEllipse(null, new Pen(Art.Brush("#13FFFFFF"), 1), new Point(0, -17), 174 * breathe, 174 * breathe);
+        dc.PushOpacity(ReducedMotion || !BreathingRing ? .2 : .18 + .65 * wave);
+        double ripple = ReducedMotion || !BreathingRing ? 174 : 169 + Math.Clamp(SecondAge / .65, 0, 1) * 20;
+        dc.DrawEllipse(null, new Pen(Art.Brush("#57FFFFFF"), 1.3), new Point(0, -17), ripple, ripple);
+        dc.Pop();
         dc.PushOpacity(.10 + .05 * wave);
         Art.Ring(dc, new Point(0, -17), 153 * breathe, progress, 11 + 2 * wave, Brushes.White);
         dc.Pop();
-        Art.Ring(dc, new Point(0, -17), 153 * breathe, progress, 4.2 + .8 * wave, Art.Brush("#D9FFFFFF"));
+        Art.Ring(dc, new Point(0, -17), 153 * breathe, progress, 4.2 + 1.8 * wave, Art.Brush("#D9FFFFFF"));
         Art.Text(dc, "B R E A T H E   &   R E S E T", 11, Art.Brush("#CCFFFFFF"), 0, -111, center: true);
         Art.Text(dc, Seconds.ToString("00"), 118, Brushes.White, 0, -92, center: true);
         Art.Text(dc, "SECONDS OF STILLNESS", 10, Art.Brush("#BFFFFFFF"), 0, 52, center: true);

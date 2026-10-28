@@ -18,6 +18,12 @@ public static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+#if SOUND_LAB_BUILD
+        if (args.Length == 0) return SoundLab.Run(Path.Combine(AppContext.BaseDirectory, "sound-preview"));
+#endif
+        // Preview is intentionally isolated from the installed guardian and preferences.
+        if (args.Length > 0 && args[0] == "--sound-lab")
+            return SoundLab.Run(args.Length > 1 ? args[1] : Path.Combine(AppContext.BaseDirectory, "sound-preview"));
         // Render mode exits before mutex, tray, timer, preferences, startup or any Show() call.
         if (args.Length > 0 && args[0] == "--render-previews")
         {
@@ -165,7 +171,8 @@ public sealed class TrayHost : IDisposable
         if (panelWindow != null) { panelWindow.RequestClose(); return; }
         var edit = new Preferences { WorkMinutes = prefs.WorkMinutes, RestSeconds = prefs.RestSeconds, Palette = prefs.Palette,
             MotionStyle = prefs.MotionStyle, StartWithWindows = prefs.StartWithWindows, ReducedMotion = prefs.ReducedMotion,
-            FlowingBackground = prefs.FlowingBackground, BreathingRing = prefs.BreathingRing, LiquidTransitions = prefs.LiquidTransitions };
+            FlowingBackground = prefs.FlowingBackground, BreathingRing = prefs.BreathingRing, LiquidTransitions = prefs.LiquidTransitions,
+            SoundEnabled = prefs.SoundEnabled, TickSounds = prefs.TickSounds, SoundVolume = prefs.SoundVolume };
         panel = new ControlPanel(edit, engine);
         var win = new SafeWindow { Content = panel, WindowStyle = WindowStyle.None, ResizeMode = ResizeMode.NoResize,
             AllowsTransparency = true, Background = Brushes.Transparent, ShowInTaskbar = false, Topmost = true,
@@ -207,6 +214,8 @@ public sealed class TrayHost : IDisposable
                 prefs.MotionStyle = edit.MotionStyle;
                 prefs.FlowingBackground = edit.FlowingBackground; prefs.BreathingRing = edit.BreathingRing; prefs.LiquidTransitions = edit.LiquidTransitions;
                 prefs.StartWithWindows = edit.StartWithWindows; prefs.ReducedMotion = edit.ReducedMotion;
+                prefs.SoundEnabled = edit.SoundEnabled; prefs.TickSounds = edit.TickSounds; prefs.SoundVolume = edit.SoundVolume;
+                overlays.Sound.Reload();
                 engine.Restart(); win.RequestClose();
             }
             catch (Exception ex)

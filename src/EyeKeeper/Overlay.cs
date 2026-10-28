@@ -15,6 +15,7 @@ public sealed class Overlay : SafeWindow
 {
     public RestVisual Visual { get; }
     readonly Forms.Screen screen;
+    EscapeShortcut? escape;
     public Forms.Screen Screen => screen;
     public Overlay(Forms.Screen monitor, Preferences prefs, int palette, int mode, bool secondary, Action skip, Action snooze)
     {
@@ -28,7 +29,12 @@ public sealed class Overlay : SafeWindow
             FlowingBackground = prefs.FlowingBackground, BreathingRing = prefs.BreathingRing };
         Visual.EnableHardware();
         Content = Visual;
-        SourceInitialized += (_, _) => { Native.Place(this, screen); Native.ClickThrough(this, true); };
+        SourceInitialized += (_, _) =>
+        {
+            Native.Place(this, screen); Native.ClickThrough(this, true);
+            if (!secondary) escape = new EscapeShortcut(this, skip);
+        };
+        Closed += (_, _) => { escape?.Dispose(); escape = null; };
         Loaded += (_, _) => Native.Place(this, screen);
         PreviewKeyDown += (_, e) =>
         {
@@ -50,6 +56,7 @@ public sealed class Overlay : SafeWindow
     }
     public void Dismiss(bool animate)
     {
+        escape?.Dispose(); escape = null;
         if (!animate) { RequestClose(); return; }
         Native.ClickThrough(this, true);
         var animation = Stopwatch.StartNew();
@@ -78,9 +85,12 @@ public sealed class OverlayGroup : IDisposable
     BitmapSource? fluidFrame;
     Task<BitmapSource>? pendingFrame;
     double frameAt = -1;
-    public OverlayGroup(Preferences preferences, BreakEngine timer) { prefs = preferences; engine = timer; }
+    readonly SoundFeedback sound;
+    public SoundFeedback Sound => sound;
+    public OverlayGroup(Preferences preferences, BreakEngine timer) { prefs = preferences; engine = timer; sound = new SoundFeedback(prefs); }
     public void Synchronize()
     {
+        sound.Observe(engine);
         if (engine.Phase is Phase.Working or Phase.Paused) { CloseAll(true); return; }
         if (windows.Count == 0)
         {
@@ -106,6 +116,7 @@ public sealed class OverlayGroup : IDisposable
     }
     void Render(object? sender, EventArgs args)
     {
+        sound.Observe(engine);
         double t = clock.Elapsed.TotalSeconds;
         if (pendingFrame?.IsCompleted == true)
         {
@@ -136,6 +147,7 @@ public sealed class OverlayGroup : IDisposable
             v.Morph = restAt < 0 ? 0 : prefs.ReducedMotion || !prefs.LiquidTransitions ? 1 : Math.Clamp((t - restAt) / 1.5, 0, 1);
             v.Seconds = engine.Remaining; v.Duration = prefs.RestSeconds;
             v.Progress = engine.RemainingExact / prefs.RestSeconds;
+            v.SecondAge = CountdownBeat.Age(engine.RemainingExact);
             v.InvalidateVisual();
         }
     }
@@ -146,5 +158,5 @@ public sealed class OverlayGroup : IDisposable
         windows.Clear(); restAt = -1;
         fluidFrame = null; pendingFrame = null;
     }
-    public void Dispose() => CloseAll();
+    public void Dispose() { CloseAll(); sound.Dispose(); }
 }

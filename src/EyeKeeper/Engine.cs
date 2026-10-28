@@ -13,12 +13,16 @@ public sealed class Preferences
     public bool FlowingBackground { get; set; } = true;
     public bool BreathingRing { get; set; } = true;
     public bool LiquidTransitions { get; set; } = true;
+    public bool SoundEnabled { get; set; } = true;
+    public bool TickSounds { get; set; } = true;
+    public double SoundVolume { get; set; } = .36;
     public string Palette { get; set; } = "Random";
     public string MotionStyle { get; set; } = "Random";
     public void Validate()
     {
         WorkMinutes = Math.Clamp(WorkMinutes, 1, 180);
         RestSeconds = Math.Clamp(RestSeconds, 5, 300);
+        SoundVolume = double.IsFinite(SoundVolume) ? Math.Clamp(SoundVolume, 0, 1) : .36;
         if (Array.IndexOf(Palettes.Names, Palette) < 0) Palette = "Random";
         if (Array.IndexOf(FluidStyles.Names, MotionStyle) < 0) MotionStyle = "Random";
     }
@@ -68,9 +72,9 @@ public sealed class BreakEngine
         Phase = Phase.Resting; deadline = now() + prefs.RestSeconds;
         resumeAt = null; Changed?.Invoke();
     }
-    public void Demonstrate()
+    public void Demonstrate(int warningSeconds = 30)
     {
-        Phase = Phase.Warning; deadline = now() + 30; resumeAt = null; Changed?.Invoke();
+        Phase = Phase.Warning; deadline = now() + Math.Clamp(warningSeconds, 1, 30); resumeAt = null; Changed?.Invoke();
     }
     public void Snooze()
     {
