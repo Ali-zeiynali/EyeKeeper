@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+.vs/
+*.user
+*.log
+*.pdb
+artifacts/
+.env
+.env.*
+!.env.example
+*.dmp
+*.previous
+__pycache__/

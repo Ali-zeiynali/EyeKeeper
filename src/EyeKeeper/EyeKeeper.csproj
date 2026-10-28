@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon Condition="Exists('Assets/eyekeeper.ico')">Assets/eyekeeper.ico</ApplicationIcon>
+    <AssemblyName>EyeKeeper</AssemblyName>
+    <Version>1.1.0</Version>
+    <Description>A quiet moment for your eyes.</Description>
+    <!-- WPF owns DPI awareness via the manifest; Forms is only used for NotifyIcon/Screen. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets/eyekeeper.ico" Condition="Exists('Assets/eyekeeper.ico')" />
+    <EmbeddedResource Include="Assets/Fluid*.ps" />
+  </ItemGroup>
+</Project>
