@@ -8,6 +8,8 @@ A native Windows tray companion for eye-rest reminders, written in C# / .NET 10 
 
 ## Use
 
+**[Download the latest Windows release](https://github.com/Ali-zeiynali/EyeKeeper/releases/latest)** — per-user Setup, self-contained ZIP and SHA-256 checksums. See the [Windows installation and release guide](docs/WINDOWS-RELEASE.md). Linux is not supported by the current WPF/Win32 implementation.
+
 The installer places the self-contained executable in `%LOCALAPPDATA%\Programs\EyeKeeper`, creates a Start menu shortcut and enables startup for the current user. Administrator permissions are not required.
 
 Click or right-click its eye icon in the notification area to open preferences. Windows may put the icon under the tray overflow arrow. The app has no main window and normally runs quietly in the background.
