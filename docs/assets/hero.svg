@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="480" viewBox="0 0 1280 480" role="img" aria-labelledby="title desc">
+  <title id="title">EyeKeeper</title>
+  <desc id="desc">A quiet moment for your eyes. Native Windows eye-rest reminders, framed by flowing mint, violet and pink color.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#0a111e"/><stop offset="1" stop-color="#191137"/></linearGradient>
+    <linearGradient id="flow"><stop stop-color="#77f2d3"/><stop offset=".45" stop-color="#7b6bff"/><stop offset="1" stop-color="#fb7adc"/></linearGradient>
+    <linearGradient id="fade" x2="0" y2="1"><stop stop-color="#b9f2e2"/><stop offset="1" stop-color="#83b9cc"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#803ffe" stop-opacity=".32"/><stop offset="1" stop-color="#803ffe" stop-opacity="0"/></radialGradient>
+    <clipPath id="clip"><rect width="1280" height="480" rx="28"/></clipPath>
+  </defs>
+  <g clip-path="url(#clip)">
+    <rect width="1280" height="480" fill="url(#bg)"/>
+    <ellipse cx="1100" cy="250" rx="500" ry="390" fill="url(#glow)"/>
+    <g fill="none" stroke="url(#flow)">
+      <path d="M790 -100C1260 90 670 130 1000 330S1320 360 1370 550" stroke-width="125" opacity=".05"/>
+      <path d="M840 -100C1310 90 720 130 1050 330S1370 360 1420 550" stroke-width="65" opacity=".1"/>
+      <path d="M885 -100C1355 90 765 130 1095 330S1415 360 1465 550" stroke-width="28" opacity=".65"/>
+      <path d="M915 -100C1385 90 795 130 1125 330S1445 360 1495 550" stroke-width="3" opacity=".9"/>
+      <path d="M945 -100C1415 90 825 130 1155 330S1475 360 1525 550" stroke-width="12" opacity=".28"/>
+    </g>
+    <rect x="1" y="1" width="1278" height="478" rx="27" fill="none" stroke="#b9f2e2" stroke-opacity=".13"/>
+    <g transform="translate(76 65)" fill="none" stroke="#b9f2e2" stroke-width="3.5">
+      <path d="M0 17Q25 -10 50 17Q25 44 0 17Z"/><circle cx="25" cy="17" r="8"/>
+    </g>
+    <g font-family="Segoe UI, Helvetica, Arial, sans-serif">
+      <text x="143" y="90" fill="#cbd8e8" font-size="16" letter-spacing="4">A MOMENT OF CALM</text>
+      <text x="72" y="207" fill="#f5f8ff" font-size="86" font-weight="700" letter-spacing="-4">EyeKeeper</text>
+      <text x="77" y="266" fill="url(#fade)" font-size="30">A quiet moment for your eyes.</text>
+      <text x="78" y="313" fill="#a4b1c9" font-size="18">Beautiful breaks. Flowing color. A calmer workday.</text>
+      <g transform="translate(78 371)">
+        <rect width="138" height="34" rx="17" fill="#b9f2e2" fill-opacity=".1" stroke="#b9f2e2" stroke-opacity=".22"/>
+        <text x="69" y="22" fill="#b9f2e2" font-size="12" text-anchor="middle" letter-spacing="1">WINDOWS NATIVE</text>
+        <text x="166" y="22" fill="#c0c8dc" font-size="13">18 atmospheres</text><circle cx="287" cy="17" r="2" fill="#768299"/>
+        <text x="309" y="22" fill="#c0c8dc" font-size="13">8 liquid materials</text><circle cx="442" cy="17" r="2" fill="#768299"/>
+        <text x="464" y="22" fill="#c0c8dc" font-size="13">Your rhythm</text>
+      </g>
+    </g>
+  </g>
+</svg>
