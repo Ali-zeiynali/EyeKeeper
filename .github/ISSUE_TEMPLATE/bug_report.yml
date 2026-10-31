@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a reproducible EyeKeeper problem.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Please check the troubleshooting guide first. Review logs for private information before posting."
+  - type: input
+    id: version
+    attributes:
+      label: EyeKeeper version
+      placeholder: "1.2.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11, version/build from winver"
+    validations:
+      required: true
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation type
+      options:
+        - Setup EXE
+        - ZIP
+        - Built from source
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you do, and how often does the problem occur?
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: displays
+    attributes:
+      label: Display and rendering details
+      description: For visual issues, include monitor count, resolutions, scaling, GPU and whether this is a remote session.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots and relevant log excerpts
+      description: Check logs for private information. Do not attach your full settings folder.
